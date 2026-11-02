@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaos-Lite Engine Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    
+    <!-- HEADER & ACTIVE METERS -->
+    <header class="card">
+      <h2>Chaos-Lite Dashboard</h2>
+      <div class="meter-grid">
+        <div class="meter-box">
+          <label>Control (0-6)</label>
+          <div class="meter-controls">
+            <button onclick="handleControlChange(-1)">-</button>
+            <span id="control-val">6</span>
+            <button onclick="handleControlChange(1)">+</button>
+          </div>
+        </div>
+        <div class="meter-box">
+          <label>Essence (0-6)</label>
+          <div class="meter-controls">
+            <button onclick="handleEssenceChange(-1)">-</button>
+            <span id="essence-val">2</span>
+            <button onclick="handleEssenceChange(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- OUTPUT DIRECTIVE BOX -->
+    <section class="card output-card">
+      <label for="directive-output">Generated AI Directive</label>
+      <textarea id="directive-output" readonly placeholder="Directives will appear here..."></textarea>
+      <div class="output-actions">
+        <button id="copy-btn" class="btn-primary" onclick="copyDirective()">Copy Instruction</button>
+        <span id="copy-feedback" class="feedback-text">Copied!</span>
+      </div>
+    </section>
+
+    <!-- COLLAPSIBLE: MOVES & ROLLS -->
+    <details class="card" open>
+      <summary>Action Moves</summary>
+      <div class="section-body">
+        <div class="form-group">
+          <label for="move-select">Move Type</label>
+          <select id="move-select">
+            <option value="act">Act (Action / Tactical)</option>
+            <option value="investigate">Investigate (Search / Explore)</option>
+            <option value="compel">Compel (Persuade / Interrogate)</option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="diff-mod">Diff Mod</label>
+            <input type="number" id="diff-mod" value="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="exp-mod">Exp Mod</label>
+            <input type="number" id="exp-mod" value="0" step="1">
+          </div>
+        </div>
+
+        <button class="btn-action" onclick="handleRollAction()">Roll Move</button>
+        <div id="roll-results" class="roll-readout"></div>
+      </div>
+    </details>
+
+    <!-- COLLAPSIBLE: ORACLE GENERATORS -->
+    <details class="card">
+      <summary>Oracles & Leads</summary>
+      <div class="section-body">
+        <div class="form-group">
+          <label for="hub-select">Macro Hub Lead</label>
+          <select id="hub-select">
+            <option value="random">-- Random Hub --</option>
+            <option value="docks">The Docks & Riverfront</option>
+            <option value="parish">Parish Scriptorium & Abbey</option>
+            <option value="garrison">Fort Ironwood Garrison</option>
+            <option value="market">Low Bazaar & Market</option>
+            <option value="slums">Silt-Reach Slums</option>
+            <option value="vance">Vance Estate & Gardens</option>
+            <option value="academy">Old Library Archives</option>
+            <option value="town">Town Center Commons</option>
+          </select>
+        </div>
+
+        <div class="grid-buttons">
+          <button onclick="handleGenerateLead()">Generate Lead Pointer</button>
+          <button onclick="handleGenerateClue()">Generate Clue Vector</button>
+          <button onclick="handleGenerateComplication()">Generate Complication</button>
+          <button onclick="handleGenerateOpportunity()">Generate Opportunity</button>
+          <button onclick="handleGenerateOracle()">Action + Theme Oracle</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- COLLAPSIBLE: PROGRESS TRACKS -->
+    <details class="card">
+      <summary>Progress & Threat Tracks</summary>
+      <div class="section-body">
+        <div class="track-create-form">
+          <input type="text" id="track-name" placeholder="Track Name (e.g. Vance Ledger)">
+          <div class="form-row">
+            <input type="number" id="track-size" value="6" min="1" max="12">
+            <select id="track-type">
+              <option value="progress">Progress</option>
+              <option value="threat">Threat</option>
+            </select>
+          </div>
+          <button onclick="handleCreateTrack()">Add Track</button>
+        </div>
+        <div id="tracks-container" class="tracks-list"></div>
+      </div>
+    </details>
+
+    <!-- COLLAPSIBLE: CHARACTER & EXPERIENCES -->
+    <details class="card">
+      <summary>Character & Experiences</summary>
+      <div class="section-body">
+        <div class="form-group">
+          <label>Add Experience</label>
+          <div class="form-row">
+            <input type="text" id="exp-input" placeholder="e.g. Former Mill Guard">
+            <button onclick="handleAddExperience()">Add</button>
+          </div>
+        </div>
+        <ul id="experience-list" class="chip-list"></ul>
+      </div>
+    </details>
+
+  </div>
+
+  <!-- ENGINE SCRIPTS -->
+  <script src="src/data/characters.js"></script>
+  <script src="src/data/locations.js"></script>
+  <script src="src/data/tables.js"></script>
+  <script src="src/data/vectors.js"></script>
+
+  <script src="src/engine/state.js"></script>
+  <script src="src/engine/generators.js"></script>
+  <script src="src/engine/directives.js"></script>
+
+  <!-- APP CONTROLLER -->
+  <script src="app.js"></script>
+</body>
+</html>

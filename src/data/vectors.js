@@ -25,7 +25,7 @@ const CLUE_VECTORS = [
   "Uncovers a secret entry, hidden vault key, or physical bypass code",
 
   // --- ATMOSPHERIC & SUPERNATURAL TRACKS ---
-  "Shows physical signs of recent panic, struggle, or hurried destruction",
+  "Shows physical signs of a panic, struggle, or hurried destruction",
   "Uncovers physical residue of an unusual substance, reagent, or magic",
   "Reveals a active holy ward, active curse, or supernatural anomaly",
   "Exposes a lingering memory trace or sensory echo of a past event"
