@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chaos-Lite Engine</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -32,11 +33,71 @@
       </div>
     </header>
 
+    <!-- OUTPUT DIRECTIVE BOX -->
+    <section class="card output-card">
+      <label for="directive-output">Generated AI Directive</label>
+      <textarea id="directive-output" readonly placeholder="Directives will appear here..."></textarea>
+      <div class="output-actions">
+        <button id="btn-copy-directive" class="btn-primary" type="button">Copy</button>
+        <button id="btn-undo-directive" class="btn-secondary" type="button" disabled>Undo</button>
+        <button id="btn-redo-directive" class="btn-secondary" type="button" disabled>Redo</button>
+        <button id="btn-clear-directive" class="btn-secondary" type="button">Clear</button>
+        <span id="copy-feedback" class="feedback-text">Copied!</span>
+      </div>
+    </section>
+
+    <!-- COLLAPSIBLE: ACTION MOVES -->
+    <details class="card" open>
+      <summary>Action Moves</summary>
+      <div class="section-body">
+        
+        <!-- MOVE TYPE SELECT -->
+        <div class="form-group">
+          <label for="move-select">Move Type</label>
+          <select id="move-select">
+            <option value="act">Act (Action / Tactical)</option>
+            <option value="investigate">Investigate (Search / Explore)</option>
+            <option value="compel">Compel (Persuade / Interrogate)</option>
+          </select>
+        </div>
+        
+        <!-- DIFFICULTY & EXPERIENCE SELECTION -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="diff-select">Difficulty</label>
+            <select id="diff-select">
+              <option value="2">Very Easy (+2)</option>
+              <option value="1">Easy (+1)</option>
+              <option value="0" selected>Moderate (+0)</option>
+              <option value="-1">Formidable (-1)</option>
+              <option value="-2">Hard (-2)</option>
+              <option value="-3">Very Hard (-3)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="exp-select">Experience</label>
+            <select id="exp-select">
+              <option value="none">-- None (+0) --</option>
+            </select>
+            <span id="exp-cost-note" class="cost-note" style="display: none;">-1 Essence</span>
+          </div>
+        </div>
+
+        <!-- ROLL BUTTON & READOUT -->
+        <button id="btn-roll-move" class="btn-action" type="button">Roll Move</button>
+        <div id="roll-results" class="roll-readout">Select a move and roll...</div>
+
+      </div>
+    </details>
+
+
   </div>
 
   <!-- 1. DATA FILES -->
   <script src="./src/data/characters.js"></script>
   <script src="./src/data/locations.js"></script>
+  <script src="./src/data/moves.js"></script>
   <script src="./src/data/tables.js"></script>
   <script src="./src/data/vectors.js"></script>
 
@@ -47,5 +108,6 @@
 
   <!-- 3. UI CONTROLLER -->
   <script src="./src/app.js"></script>
+  
 </body>
 </html>

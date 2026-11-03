@@ -5,71 +5,26 @@
  */
 
 /**
- * Builds a second-person action roll directive for AI Dungeon.
- * @param {string} moveType - 'act', 'investigate', or 'compel'
+ * Builds a second-person action roll directive.
+ * @param {string} moveType - Key from MOVES dictionary ('act', 'investigate', 'compel', etc.)
  * @param {string} outcomeTier - 'Critical Success', 'Strong Success', 'Weak Success', 'Failure', or 'Critical Failure'
- * @param {string|null} clueText - Clue vector string (used primary in investigate moves)
- * @param {string|null} critVectorText - Opportunity vector (for Crit Success) or Complication vector (for Crit Fail)
+ * @param {string|null} clueText - Clue vector string
+ * @param {string|null} critVectorText - Opportunity or Complication vector string
  * @returns {string} Clean, second-person instruction text
  */
 function buildMoveDirective(moveType, outcomeTier, clueText = null, critVectorText = null) {
-  const move = (moveType || 'act').toLowerCase();
-  
-  // --- ACT MOVE ---
-  if (move === 'act') {
-    switch (outcomeTier) {
-      case 'Critical Success':
-        return `You succeed decisively. Present a favorable opportunity or advantage: ${critVectorText || 'A clear path opens.'}`;
-      case 'Strong Success':
-        return `You succeed smoothly without complication or cost.`;
-      case 'Weak Success':
-        return `You succeed, but an immediate minor complication, delay, or cost arises.`;
-      case 'Failure':
-        return `You fail at your attempt. A clear setback or immediate complication occurs.`;
-      case 'Critical Failure':
-        return `You fail catastrophically. Introduce a major crisis or threat: ${critVectorText || 'An immediate catastrophe strikes.'}`;
-      default:
-        return `You attempt the action.`;
+  const key = (moveType || 'act').toLowerCase();
+  const moveDef = (window.MOVES && window.MOVES[key]) ? window.MOVES[key] : null;
+
+  if (moveDef && moveDef.directives && moveDef.directives[outcomeTier]) {
+    const directiveHandler = moveDef.directives[outcomeTier];
+    if (typeof directiveHandler === 'function') {
+      return directiveHandler(clueText, critVectorText);
     }
+    return directiveHandler;
   }
 
-  // --- INVESTIGATE MOVE ---
-  if (move === 'investigate') {
-    switch (outcomeTier) {
-      case 'Critical Success':
-        return `You uncover vital information: ${clueText || 'A major secret is exposed.'} Additionally, gain a distinct advantage: ${critVectorText || 'An opportunity presents itself.'}`;
-      case 'Strong Success':
-        return `You uncover useful information: ${clueText || 'A key detail is revealed.'}`;
-      case 'Weak Success':
-        return `You learn a piece of information, but it is vague, troubling, or comes at a narrative cost: ${clueText || 'An unsettling detail comes to light.'}`;
-      case 'Failure':
-        return `You fail to find meaningful information and uncover a troubling information or a narrative cost.`;
-      case 'Critical Failure':
-        return `You uncover a hard, disturbing truth: ${critVectorText || 'Hard truth.'}`;
-      default:
-        return `You investigate the area.`;
-    }
-  }
-
-  // --- COMPEL MOVE ---
-  if (move === 'compel') {
-    switch (outcomeTier) {
-      case 'Critical Success':
-        return `They are fully convinced and comply enthusiastically, offering an unexpected concession: ${critVectorText || 'They offer extra aid.'}`;
-      case 'Strong Success':
-        return `They are convinced and comply with your demand or suggestion.`;
-      case 'Weak Success':
-        return `They agree to comply, but demonstrate hesitance or mistrust, or ask something in return.`;
-      case 'Failure':
-        return `They refuse to comply, causing tension to rise or their attitude toward you to harden.`;
-      case 'Critical Failure':
-        return `They refuse hostilely, retaliate socially or physically, and trigger an immediate crisis: ${critVectorText || 'They turn openly hostile.'}`;
-      default:
-        return `You attempt to convince them.`;
-    }
-  }
-
-  return `Execute the action and resolve the outcome.`;
+  return `Execute the ${key} move and resolve the outcome.`;
 }
 
 /**
