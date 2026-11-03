@@ -39,14 +39,26 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-roll-move').addEventListener('click', handleRollMove);
   document.getElementById('exp-select').addEventListener('change', handleExperienceSelectChange);
 
+  // Re-render difficulty dropdown when selected move changes
+  document.getElementById('move-select').addEventListener('change', updateDifficultyDropdown);
+
+  // Bind UI cost tracking to roll button label
+  document.getElementById('move-select').addEventListener('change', updateRollButtonText);
+  document.getElementById('exp-select').addEventListener('change', updateRollButtonText);
+
+  // Initial render
+  renderMeters();
+
   // Populate experiences dropdown
   populateExperienceDropdown();
 
   // Populate moves dropdown dynamically from MOVES object
-  populateMoveDropdown();  
+  populateMoveDropdown();
+  updateDifficultyDropdown();
 
-  // Initial render
-  renderMeters();
+  // Initial button text sync
+  updateRollButtonText();
+
 });
 
 function renderMeters() {
@@ -261,9 +273,64 @@ function populateMoveDropdown() {
   });
 }
 
+const STANDARD_DIFFICULTIES = [
+  { value: "2", label: "Very Easy (+2)" },
+  { value: "1", label: "Easy (+1)" },
+  { value: "0", label: "Moderate (+0)" },
+  { value: "-1", label: "Formidable (-1)" },
+  { value: "-2", label: "Hard (-2)" },
+  { value: "-3", label: "Very Hard (-3)" }
+];
+
+/**
+ * Updates difficulty select options based on custom move labels or standard defaults.
+ */
+function updateDifficultyDropdown() {
+  const moveSelect = document.getElementById('move-select');
+  const diffSelect = document.getElementById('diff-select');
+  if (!moveSelect || !diffSelect || !window.MOVES) return;
+
+  const moveDef = window.MOVES[moveSelect.value];
+  const options = (moveDef && moveDef.difficultyLabels) ? moveDef.difficultyLabels : STANDARD_DIFFICULTIES;
+
+  const currentVal = diffSelect.value;
+  diffSelect.innerHTML = '';
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    if (opt.value === currentVal || (opt.value === "0" && !options.some(o => o.value === currentVal))) {
+      el.selected = true;
+    }
+    diffSelect.appendChild(el);
+  });
+}
+
+/**
+ * Dynamic button label updating based on combined move + experience costs
+ */
+function updateRollButtonText() {
+  const moveSelect = document.getElementById('move-select');
+  const expSelect = document.getElementById('exp-select');
+  const rollBtn = document.getElementById('btn-roll-move');
+  if (!moveSelect || !expSelect || !rollBtn || !window.MOVES) return;
+
+  const moveDef = window.MOVES[moveSelect.value];
+  const baseEssenceCost = moveDef?.costs?.essence || 0;
+  const expEssenceCost = (expSelect.value !== 'none') ? 1 : 0;
+  const totalEssenceCost = baseEssenceCost + expEssenceCost;
+
+  if (totalEssenceCost > 0) {
+    rollBtn.textContent = `Roll Move (-${totalEssenceCost} Essence)`;
+  } else {
+    rollBtn.textContent = 'Roll Move';
+  }
+}
+
 /**
  * Handles Action Move calculation, upfront costs, dice dominance,
- * post-roll rewards/penalties, and instruction output generation.
+ * post-roll rewards/penalties, net stat tallying, and output generation.
  */
 function handleRollMove() {
   const moveType = document.getElementById('move-select').value;
@@ -289,11 +356,11 @@ function handleRollMove() {
 
   const baseEssenceCost = moveDef?.costs?.essence || 0;
   const baseControlCost = moveDef?.costs?.control || 0;
-  const totalEssenceCost = baseEssenceCost + expEssenceCost;
+  const totalUpfrontEssence = baseEssenceCost + expEssenceCost;
 
   // Validate player resources
-  if (window.gameState.player.essence < totalEssenceCost) {
-    alert(`Not enough Essence! Need ${totalEssenceCost} Essence.`);
+  if (window.gameState.player.essence < totalUpfrontEssence) {
+    alert(`Not enough Essence! Need ${totalUpfrontEssence} Essence.`);
     return;
   }
   if (window.gameState.player.control < baseControlCost) {
@@ -301,29 +368,63 @@ function handleRollMove() {
     return;
   }
 
+  // Net changes tracking
+  let netEssence = -totalUpfrontEssence;
+  let netControl = -baseControlCost;
+
   // Deduct upfront costs
-  if (totalEssenceCost > 0) updateEssence(-totalEssenceCost);
+  if (totalUpfrontEssence > 0) updateEssence(-totalUpfrontEssence);
   if (baseControlCost > 0) updateControl(-baseControlCost);
 
   // --- 2. ENGINE ROLL ---
   const roll = rollAction(window.gameState.player.control, diffMod, expMod);
 
   // --- 3. APPLY DICE DOMINANCE SHIFTS ---
-  if (roll.controlChange !== 0) updateControl(roll.controlChange);
-  if (roll.essenceChange !== 0) updateEssence(roll.essenceChange);
+  if (roll.controlChange !== 0) {
+    updateControl(roll.controlChange);
+    netControl += roll.controlChange;
+  }
+  if (roll.essenceChange !== 0) {
+    updateEssence(roll.essenceChange);
+    netEssence += roll.essenceChange;
+  }
 
   // --- 4. APPLY MOVE SPECIFIC REWARDS & PENALTIES ---
+  let outcomeModifierText = '';
+
   if (moveDef) {
     const reward = moveDef.rewards?.[roll.outcome];
     if (reward) {
-      if (reward.control) updateControl(reward.control);
-      if (reward.essence) updateEssence(reward.essence);
+      if (reward.control) {
+        updateControl(reward.control);
+        netControl += reward.control;
+      }
+      if (reward.essence) {
+        updateEssence(reward.essence);
+        netEssence += reward.essence;
+      }
+
+      const parts = [];
+      if (reward.essence) parts.push(`${reward.essence > 0 ? '+' : ''}${reward.essence} Essence`);
+      if (reward.control) parts.push(`${reward.control > 0 ? '+' : ''}${reward.control} Control`);
+      if (parts.length > 0) outcomeModifierText = ` <span style="color: #a3be8c; font-weight: bold;">(${parts.join(', ')})</span>`;
     }
 
     const penalty = moveDef.penalties?.[roll.outcome];
     if (penalty) {
-      if (penalty.control) updateControl(penalty.control);
-      if (penalty.essence) updateEssence(penalty.essence);
+      if (penalty.control) {
+        updateControl(penalty.control);
+        netControl += penalty.control;
+      }
+      if (penalty.essence) {
+        updateEssence(penalty.essence);
+        netEssence += penalty.essence;
+      }
+
+      const parts = [];
+      if (penalty.essence) parts.push(`${penalty.essence > 0 ? '+' : ''}${penalty.essence} Essence`);
+      if (penalty.control) parts.push(`${penalty.control > 0 ? '+' : ''}${penalty.control} Control`);
+      if (parts.length > 0) outcomeModifierText = ` <span style="color: #bf616a; font-weight: bold;">(${parts.join(', ')})</span>`;
     }
   }
 
@@ -349,11 +450,10 @@ function handleRollMove() {
 
   // --- 8. UI READOUT ---
   const readout = document.getElementById('roll-results');
-  let costSummary = [];
-  if (baseEssenceCost > 0) costSummary.push(`-${baseEssenceCost} Ess`);
-  if (baseControlCost > 0) costSummary.push(`-${baseControlCost} Ctrl`);
-  if (expEssenceCost > 0) costSummary.push(`-1 Ess (Exp)`);
+  
+  const fmtStat = (val) => (val > 0 ? `+${val}` : `${val}`);
+  const essenceStr = netEssence !== 0 ? ` | Essence ${fmtStat(netEssence)}` : '';
+  const controlStr = netControl !== 0 ? ` | Control ${fmtStat(netControl)}` : '';
 
-  const costString = costSummary.length > 0 ? ` | <em>Cost: (${costSummary.join(', ')})</em>` : '';
-  readout.innerHTML = `<strong>${roll.outcome}</strong> (Action: ${roll.actionScore} vs Challenge: ${roll.c1}, ${roll.c2})<br>Dominance: <em>${roll.dominance}</em>${costString}`;
+  readout.innerHTML = `<strong>${roll.outcome}</strong> (Action: ${roll.actionScore} vs Challenge: ${roll.c1}, ${roll.c2})${outcomeModifierText}<br>Dominance: <em>${roll.dominance}</em>${essenceStr}${controlStr}`;
 }

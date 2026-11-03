@@ -54,25 +54,14 @@
         <!-- MOVE TYPE SELECT -->
         <div class="form-group">
           <label for="move-select">Move Type</label>
-          <select id="move-select">
-            <option value="act">Act (Action / Tactical)</option>
-            <option value="investigate">Investigate (Search / Explore)</option>
-            <option value="compel">Compel (Persuade / Interrogate)</option>
-          </select>
+          <select id="move-select"></select>
         </div>
         
-        <!-- DIFFICULTY & EXPERIENCE SELECTION -->
+        <!-- DIFFICULTY & EXPERIENCE (2-COLUMN ROW) -->
         <div class="form-row">
           <div class="form-group">
             <label for="diff-select">Difficulty</label>
-            <select id="diff-select">
-              <option value="2">Very Easy (+2)</option>
-              <option value="1">Easy (+1)</option>
-              <option value="0" selected>Moderate (+0)</option>
-              <option value="-1">Formidable (-1)</option>
-              <option value="-2">Hard (-2)</option>
-              <option value="-3">Very Hard (-3)</option>
-            </select>
+            <select id="diff-select"></select>
           </div>
 
           <div class="form-group">
@@ -80,11 +69,10 @@
             <select id="exp-select">
               <option value="none">-- None (+0) --</option>
             </select>
-            <span id="exp-cost-note" class="cost-note" style="display: none;">-1 Essence</span>
           </div>
         </div>
 
-        <!-- ROLL BUTTON & READOUT -->
+        <!-- ROLL BUTTON & READOUT (VERTICAL STACK) -->
         <button id="btn-roll-move" class="btn-action" type="button">Roll Move</button>
         <div id="roll-results" class="roll-readout">Select a move and roll...</div>
 

@@ -56,6 +56,37 @@ const MOVES = {
       "Failure": () => `They refuse to comply, causing tension to rise or their attitude toward you to harden.`,
       "Critical Failure": (clue, crit) => `They refuse hostilely, retaliate socially or physically, and trigger an immediate crisis: ${crit || 'They turn openly hostile.'}`
     }
+  },
+
+  shapeshift: {
+    id: "shapeshift",
+    name: "Shapeshift",
+    category: "Ability",
+    stat: "control",
+    costs: { essence: 2, control: 0 },
+    rewards: {
+      "Critical Success": { essence: 1, control: 1 },
+      "Strong Success": { essence: 1 }
+    },
+    penalties: {
+      "Failure": { control: -1 },
+      "Critical Failure": { control: -2 }
+    },
+    difficultyLabels: [
+      { value: "2", label: "Twelve Hours: Very Easy (+2)" },
+      { value: "1", label: "Four Hours: Easy (+1)" },
+      { value: "0", label: "One Hour: Moderate (+0)" },
+      { value: "-1", label: "Ten Minutes: Formidable (-1)" },
+      { value: "-2", label: "One Minute: Hard (-2)" },
+      { value: "-3", label: "Immediate: Very Hard (-3)" }
+    ],
+    directives: {
+      "Critical Success": () => `You shapeshift into your new mask naturally and fluidly, drawing power and focus from the transition.`,
+      "Strong Success": () => `You shapeshift into your new mask smoothly and seamlessly.`,
+      "Weak Success": () => `You force the shapeshift into your new mask, but the transition is uncomfortable and strains your composure.`,
+      "Failure": () => `You force the shapeshift into your new mask through agonizing effort. You complete the transformation, but your control is severely shaken.`,
+      "Critical Failure": () => `The shapeshift into your new mask is torturous, harrowing, and visually disturbing, leaving your composure heavily eroded.`
+    }
   }
 };
 
