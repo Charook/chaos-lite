@@ -5,7 +5,6 @@
 
 const STORAGE_KEY = 'chaos_lite_state';
 
-// Default state model
 const defaultState = {
   version: 1.0,
   player: {
@@ -14,10 +13,11 @@ const defaultState = {
     essence: 2,
     experiences: []
   },
-  tracks: [], // Array of track objects: { id, name, size, current, type, isComplete }
+  tracks: [],
   lastDirective: ""
 };
 
+// Global singleton state object
 let gameState = JSON.parse(JSON.stringify(defaultState));
 
 // --- CORE PERSISTENCE ---
@@ -34,16 +34,24 @@ function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      gameState = Object.assign({}, defaultState, JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      // Mutate existing gameState in-place to preserve window object reference
+      Object.assign(gameState, JSON.parse(JSON.stringify(defaultState)), parsed);
     }
   } catch (e) {
     console.error("Failed to load state from localStorage:", e);
   }
+
+  // Ensure arrays are strictly initialized
+  if (!gameState.player) gameState.player = { name: "Investigator", control: 6, essence: 2, experiences: [] };
+  if (!Array.isArray(gameState.player.experiences)) gameState.player.experiences = [];
+  if (!Array.isArray(gameState.tracks)) gameState.tracks = [];
+
   return gameState;
 }
 
 function resetState() {
-  gameState = JSON.parse(JSON.stringify(defaultState));
+  Object.assign(gameState, JSON.parse(JSON.stringify(defaultState)));
   saveState();
   return gameState;
 }
@@ -51,14 +59,12 @@ function resetState() {
 // --- PLAYER METER MODIFIERS ---
 
 function updateControl(amount) {
-  // Clamps value between 0 and 6
   gameState.player.control = Math.max(0, Math.min(6, gameState.player.control + amount));
   saveState();
   return gameState.player.control;
 }
 
 function updateEssence(amount) {
-  // Clamps value between 0 and 6
   gameState.player.essence = Math.max(0, Math.min(6, gameState.player.essence + amount));
   saveState();
   return gameState.player.essence;
@@ -78,7 +84,7 @@ function removeExperience(index) {
   }
 }
 
-// --- DAGGERHEART-STYLE PROGRESS TRACKS ---
+// --- TRACKS ---
 
 function createTrack(name, size = 6, type = 'progress') {
   const newTrack = {
@@ -86,7 +92,7 @@ function createTrack(name, size = 6, type = 'progress') {
     name: name || 'New Track',
     size: Number(size),
     current: 0,
-    type: type, // 'progress' or 'threat'
+    type: type,
     isComplete: false
   };
   gameState.tracks.push(newTrack);
@@ -98,11 +104,7 @@ function advanceTrack(id, amount = 1) {
   const track = gameState.tracks.find(t => t.id === id);
   if (track) {
     track.current = Math.max(0, Math.min(track.size, track.current + amount));
-    if (track.current >= track.size) {
-      track.isComplete = true;
-    } else {
-      track.isComplete = false;
-    }
+    track.isComplete = (track.current >= track.size);
     saveState();
   }
   return track;
@@ -113,27 +115,7 @@ function removeTrack(id) {
   saveState();
 }
 
-// --- IMPORT / EXPORT JSON ---
-
-function exportStateJSON() {
-  return JSON.stringify(gameState, null, 2);
-}
-
-function importStateJSON(jsonString) {
-  try {
-    const imported = JSON.parse(jsonString);
-    if (imported && imported.player) {
-      gameState = imported;
-      saveState();
-      return true;
-    }
-  } catch (e) {
-    console.error("Invalid state JSON format:", e);
-  }
-  return false;
-}
-
-// Global attachment for browser execution
+// Global attachment
 if (typeof window !== 'undefined') {
   window.gameState = gameState;
   window.saveState = saveState;
@@ -146,6 +128,4 @@ if (typeof window !== 'undefined') {
   window.createTrack = createTrack;
   window.advanceTrack = advanceTrack;
   window.removeTrack = removeTrack;
-  window.exportStateJSON = exportStateJSON;
-  window.importStateJSON = importStateJSON;
 }
