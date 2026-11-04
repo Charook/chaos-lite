@@ -152,7 +152,7 @@ function generateCharacter(namedWeight = 60) {
 function generateActionTheme() {
   const action = (typeof ACTION_WORDS !== 'undefined') ? getRandomElement(ACTION_WORDS) : "Observe";
   const theme = (typeof THEME_WORDS !== 'undefined') ? getRandomElement(THEME_WORDS) : "Secret";
-  return `${action} + ${theme}`;
+  return `${action} ${theme}`;
 }
 
 /**

@@ -46,6 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('move-select').addEventListener('change', updateRollButtonText);
   document.getElementById('exp-select').addEventListener('change', updateRollButtonText);
 
+  // Oracle & Generator Bindings
+  document.getElementById('btn-oracle-action-theme').addEventListener('click', handleActionThemeOracle);
+  document.getElementById('btn-generate-lead').addEventListener('click', handleLeadGenerator);
+  document.getElementById('btn-vector-clue').addEventListener('click', () => handleVectorGenerator('clue'));
+  document.getElementById('btn-vector-opportunity').addEventListener('click', () => handleVectorGenerator('opportunity'));
+  document.getElementById('btn-vector-complication').addEventListener('click', () => handleVectorGenerator('complication'));
+
   // Initial render
   renderMeters();
 
@@ -456,4 +463,68 @@ function handleRollMove() {
   const controlStr = netControl !== 0 ? ` | Control ${fmtStat(netControl)}` : '';
 
   readout.innerHTML = `<strong>${roll.outcome}</strong> (Action: ${roll.actionScore} vs Challenge: ${roll.c1}, ${roll.c2})${outcomeModifierText}<br>Dominance: <em>${roll.dominance}</em>${essenceStr}${controlStr}`;
+}
+
+/**
+ * Rolls Action/Theme oracle and pushes directive to Output stack.
+ */
+function handleActionThemeOracle() {
+  // Fix: calling generateActionTheme() matching generators.js
+  const oracleFunc = window.generateActionTheme || window.getRandomActionTheme;
+  if (typeof oracleFunc !== 'function' || typeof buildOracleDirective !== 'function') return;
+
+  const oraclePair = oracleFunc();
+  const directive = buildOracleDirective(oraclePair);
+  pushDirectiveOutput(directive, 'append');
+}
+
+/**
+ * Generates a targeted or random Lead directive for characters/locations.
+ */
+function handleLeadGenerator() {
+  const targetType = document.getElementById('lead-target-select').value;
+  let locText = null;
+  let charText = null;
+
+  let rollType = targetType;
+  if (rollType === 'random') {
+    rollType = Math.random() < 0.5 ? 'character' : 'location';
+  }
+
+  // Extract the string '.text' property from returned location/character objects
+  if (rollType === 'location' && typeof generateLocation === 'function') {
+    const locResult = generateLocation();
+    locText = typeof locResult === 'object' ? locResult.text : locResult;
+  }
+  
+  if (rollType === 'character' && typeof generateCharacter === 'function') {
+    const charResult = generateCharacter();
+    charText = typeof charResult === 'object' ? charResult.text : charResult;
+  }
+
+  if (typeof buildLeadDirective === 'function') {
+    const directive = buildLeadDirective(locText, charText);
+    pushDirectiveOutput(directive, 'append');
+  }
+}
+
+/**
+ * Generates a Clue, Opportunity, or Complication vector directive.
+ * @param {'clue'|'opportunity'|'complication'} type 
+ */
+function handleVectorGenerator(type) {
+  let vectorText = '';
+
+  if (type === 'clue' && typeof generateClueVector === 'function') {
+    vectorText = generateClueVector();
+  } else if (type === 'opportunity' && typeof generateOpportunityVector === 'function') {
+    vectorText = generateOpportunityVector();
+  } else if (type === 'complication' && typeof generateComplicationVector === 'function') {
+    vectorText = generateComplicationVector();
+  }
+
+  if (vectorText && typeof buildVectorDirective === 'function') {
+    const directive = buildVectorDirective(vectorText, type);
+    pushDirectiveOutput(directive, 'append');
+  }
 }

@@ -242,3 +242,52 @@ details.card summary {
   border: 1px solid var(--card-border);
   line-height: 1.4;
 }
+
+/* ORACLES & GENERATORS */
+.oracle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.oracle-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.oracle-group label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.button-row {
+  display: flex;
+  gap: 6px;
+}
+
+.button-row .btn-secondary {
+  flex: 1;
+}
+
+.btn-secondary.full-width {
+  width: 100%;
+}
+
+/* ORACLE & GENERATOR DROPDOWN STYLING */
+.oracle-group select {
+  background: #16191e;
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.oracle-group .form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
