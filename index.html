@@ -47,7 +47,7 @@
     </section>
 
     <!-- COLLAPSIBLE: ACTION MOVES -->
-    <details class="card" open>
+    <details class="card">
       <summary>Action Moves</summary>
       <div class="section-body">
         
@@ -75,6 +75,25 @@
         <!-- ROLL BUTTON & READOUT (VERTICAL STACK) -->
         <button id="btn-roll-move" class="btn-action" type="button">Roll Move</button>
         <div id="roll-results" class="roll-readout">Select a move and roll...</div>
+
+      </div>
+    </details>
+
+    <!-- COLLAPSIBLE: EXPERIENCES -->
+    <details class="card">
+      <summary>Experiences</summary>
+      <div class="section-body">
+        
+        <!-- ADD EXPERIENCE FORM -->
+        <div class="form-row">
+          <input type="text" id="exp-name-input" placeholder="e.g., Lockpicking, Noble Etiquette..." style="flex: 1; background: #16191e; border: 1px solid var(--card-border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem;" />
+          <button id="btn-add-exp" class="btn-secondary" type="button">+ Add</button>
+        </div>
+
+        <!-- DYNAMIC EXPERIENCES LIST -->
+        <div id="experiences-list" class="experiences-list" style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+          <!-- Rendered dynamically -->
+        </div>
 
       </div>
     </details>
@@ -117,7 +136,7 @@
     </details>
 
     <!-- COLLAPSIBLE: PROGRESS & THREAT TRACKS -->
-    <details class="card" open>
+    <details class="card">
       <summary>Progress & Threat Tracks</summary>
       <div class="section-body">
         
@@ -129,7 +148,7 @@
         <!-- CREATE TRACK FORM (BOTTOM) -->
         <div class="track-create-form">
           <div class="form-group">
-            <label for="track-name-input">Track Name</label>
+            <label for="track-name-input">Track Description</label>
             <input type="text" id="track-name-input" placeholder="e.g., Find the Monstrance..." />
           </div>
           <div class="form-row">
@@ -152,6 +171,21 @@
           </div>
         </div>
 
+      </div>
+    </details>
+
+    <!-- COLLAPSIBLE: SYSTEM & DATA -->
+    <details class="card">
+      <summary>System & Data</summary>
+      <div class="section-body">
+        <div class="button-row">
+          <button id="btn-export-state" class="btn-secondary" type="button">Export State (.json)</button>
+          <button id="btn-import-trigger" class="btn-secondary" type="button">Import State</button>
+          <input type="file" id="input-import-file" accept=".json" style="display: none;" />
+        </div>
+        <div style="margin-top: 8px;">
+          <button id="btn-reset-state" class="btn-secondary full-width" type="button" style="color: #bf616a;">Reset Session</button>
+        </div>
       </div>
     </details>
 

@@ -474,3 +474,58 @@ details.card summary {
   font-size: 0.7rem;
 }
 
+/* EXPERIENCES SECTION */
+.exp-item {
+  background: #16191e;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exp-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.exp-bonus-badge {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+/* CUSTOM DARK SCROLLBARS */
+
+/* Firefox standard properties */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4c566a #16191e;
+}
+
+/* Chrome, Edge, Safari WebKit properties */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #16191e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4c566a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5e81ac;
+}
+
+::-webkit-scrollbar-corner {
+  background: #16191e;
+}
+

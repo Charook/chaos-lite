@@ -57,8 +57,24 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-create-track').addEventListener('click', handleCreateTrack);
   renderTracks();
 
-  // Initial render
+  // System section bindings
+  document.getElementById('btn-export-state').addEventListener('click', handleExportState);
+  document.getElementById('btn-import-trigger').addEventListener('click', () => {
+    document.getElementById('input-import-file').click();
+  });
+  document.getElementById('input-import-file').addEventListener('change', handleImportState);
+  document.getElementById('btn-reset-state').addEventListener('click', handleResetState);
+
+  // Experience section bindings
+  document.getElementById('btn-add-exp').addEventListener('click', handleAddExperience);
+  renderExperiences();
+
+  // Refresh all UI sections
   renderMeters();
+  renderTracks();
+  if (typeof renderExperiences === 'function') renderExperiences();
+  if (typeof populateExperienceDropdown === 'function') populateExperienceDropdown();
+  if (typeof applyHistoryToUI === 'function') applyHistoryToUI();
 
   // Populate experiences dropdown
   populateExperienceDropdown();
@@ -220,12 +236,13 @@ function copyDirective() {
 }
 
 /**
- * Populates the Experience dropdown from window.gameState.player.experiences,
- * with a fallback 'Ad-Hoc / Generic (+2)' for quick testing/general use.
+ * Populates the Action Moves dropdown with sorted experiences (+2 each).
  */
 function populateExperienceDropdown() {
   const expSelect = document.getElementById('exp-select');
   if (!expSelect) return;
+
+  const currentVal = expSelect.value;
 
   expSelect.innerHTML = `
     <option value="none">-- None (+0) --</option>
@@ -233,13 +250,18 @@ function populateExperienceDropdown() {
   `;
 
   if (window.gameState && window.gameState.player && Array.isArray(window.gameState.player.experiences)) {
-    window.gameState.player.experiences.forEach((exp, idx) => {
-      const opt = document.createElement('option');
-      const name = typeof exp === 'object' ? exp.name : exp;
-      const bonus = typeof exp === 'object' ? (exp.value || 2) : 2;
+    const sortedExps = [...window.gameState.player.experiences].sort((a, b) => {
+      const nameA = (typeof a === 'object' ? a.name : a).toLowerCase();
+      const nameB = (typeof b === 'object' ? b.name : b).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
-      opt.value = idx.toString();
-      opt.textContent = `${name} (+${bonus})`;
+    sortedExps.forEach(exp => {
+      const expName = typeof exp === 'object' ? exp.name : exp;
+      const opt = document.createElement('option');
+      opt.value = expName;
+      opt.textContent = `${expName} (+2)`;
+      if (expName === currentVal) opt.selected = true;
       expSelect.appendChild(opt);
     });
   }
@@ -356,6 +378,7 @@ function handleRollMove() {
 
   if (expSelectVal !== 'none') {
     expEssenceCost = 1;
+    expMod = 2;
     if (expSelectVal === 'generic') {
       expMod = 2;
     } else if (window.gameState) {
@@ -586,7 +609,7 @@ function renderTracks() {
 
     const typeLabel = (track.type || 'objective').toUpperCase();
     const isConfirming = (pendingDeleteTrackId === track.id);
-    const deleteBtnText = isConfirming ? 'Confirm?' : '×';
+    const deleteBtnText = isConfirming ? '?' : '×';
     const deleteBtnClass = `track-btn btn-delete${isConfirming ? ' confirming' : ''}`;
 
     headerEl.innerHTML = `
@@ -666,4 +689,197 @@ function handleReduceTrack(id) {
     }
   }
   renderTracks();
+}
+
+/**
+ * Exports current gameState to a downloaded JSON file.
+ */
+function handleExportState() {
+  if (!window.gameState) return;
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.gameState, null, 2));
+  const downloadAnchor = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `blackwood_state_${dateStr}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+/**
+ * Handles importing and validating a JSON state file.
+ */
+function handleImportState(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      
+      // Basic validation check
+      if (!importedData.player || !Array.isArray(importedData.tracks)) {
+        alert("Invalid state file format.");
+        return;
+      }
+
+      // Mutate window.gameState in-place
+      Object.assign(window.gameState, importedData);
+      if (typeof saveState === 'function') saveState();
+
+      // Refresh all UI sections
+      renderMeters();
+      renderTracks();
+      if (typeof renderExperiences === 'function') renderExperiences();
+      if (typeof populateExperienceDropdown === 'function') populateExperienceDropdown();
+      if (typeof applyHistoryToUI === 'function') applyHistoryToUI();
+
+      alert("Game state imported successfully!");
+    } catch (err) {
+      alert("Error reading state JSON file: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // Reset file input
+}
+
+// State tracking for session reset confirmation
+let isConfirmingReset = false;
+let resetTimer = null;
+
+/**
+ * Safely resets session state with a two-step confirmation.
+ */
+function handleResetState() {
+  const resetBtn = document.getElementById('btn-reset-state');
+  if (!resetBtn) return;
+
+  if (isConfirmingReset) {
+    clearTimeout(resetTimer);
+    isConfirmingReset = false;
+    resetBtn.textContent = 'Reset Session';
+    resetBtn.style.background = '';
+    
+    if (typeof resetState === 'function') {
+      resetState();
+      renderMeters();
+      renderTracks();
+      if (typeof renderExperiences === 'function') renderExperiences();
+      if (typeof populateExperienceDropdown === 'function') populateExperienceDropdown();
+      if (typeof pushDirectiveOutput === 'function') pushDirectiveOutput('', 'replace');
+    }
+  } else {
+    isConfirmingReset = true;
+    resetBtn.textContent = 'Confirm Reset? (Erases Progress)';
+    resetBtn.style.background = '#bf616a';
+    resetBtn.style.color = '#ffffff';
+
+    resetTimer = setTimeout(() => {
+      isConfirmingReset = false;
+      resetBtn.textContent = 'Reset Session';
+      resetBtn.style.background = '';
+      resetBtn.style.color = '#bf616a';
+    }, 3000);
+  }
+}
+
+// State tracking for experience deletion confirmation
+let pendingDeleteExpName = null;
+let deleteExpTimer = null;
+
+/**
+ * Renders experiences alphabetically in the Experiences card list.
+ */
+function renderExperiences() {
+  const expListEl = document.getElementById('experiences-list');
+  if (!expListEl || !window.gameState || !window.gameState.player) return;
+
+  expListEl.innerHTML = '';
+
+  const exps = window.gameState.player.experiences || [];
+
+  if (exps.length === 0) {
+    expListEl.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding: 4px 0;">No experiences added yet.</div>`;
+    return;
+  }
+
+  // Sort alphabetically
+  const sortedExps = [...exps].sort((a, b) => {
+    const nameA = (typeof a === 'object' ? a.name : a).toLowerCase();
+    const nameB = (typeof b === 'object' ? b.name : b).toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
+  sortedExps.forEach(exp => {
+    const expName = typeof exp === 'object' ? exp.name : exp;
+    const itemEl = document.createElement('div');
+    itemEl.className = 'exp-item';
+
+    const isConfirming = (pendingDeleteExpName === expName);
+    const deleteBtnText = isConfirming ? '?' : '×';
+    const deleteBtnClass = `track-btn btn-delete${isConfirming ? ' confirming' : ''}`;
+
+    itemEl.innerHTML = `
+      <div>
+        <span class="exp-label">${expName}</span>
+        <span class="exp-bonus-badge">(+2)</span>
+      </div>
+      <button class="${deleteBtnClass}" type="button" onclick="handleDeleteExperience('${expName.replace(/'/g, "\\'")}')">${deleteBtnText}</button>
+    `;
+
+    expListEl.appendChild(itemEl);
+  });
+}
+
+/**
+ * Handles adding a new experience string.
+ */
+function handleAddExperience() {
+  const input = document.getElementById('exp-name-input');
+  if (!input || !input.value.trim()) {
+    alert('Please enter an experience name.');
+    return;
+  }
+
+  const expName = input.value.trim();
+
+  if (typeof addExperience === 'function') {
+    addExperience(expName);
+  }
+
+  input.value = '';
+  renderExperiences();
+  populateExperienceDropdown();
+}
+
+/**
+ * Safely removes an experience by name using a two-step confirmation tap.
+ */
+function handleDeleteExperience(expName) {
+  if (pendingDeleteExpName === expName) {
+    clearTimeout(deleteExpTimer);
+    pendingDeleteExpName = null;
+
+    if (window.gameState && window.gameState.player && Array.isArray(window.gameState.player.experiences)) {
+      const idx = window.gameState.player.experiences.findIndex(e => (typeof e === 'object' ? e.name : e) === expName);
+      if (idx !== -1 && typeof removeExperience === 'function') {
+        removeExperience(idx);
+      }
+    }
+
+    renderExperiences();
+    populateExperienceDropdown();
+  } else {
+    clearTimeout(deleteExpTimer);
+    pendingDeleteExpName = expName;
+    renderExperiences();
+
+    deleteExpTimer = setTimeout(() => {
+      pendingDeleteExpName = null;
+      renderExperiences();
+    }, 2000);
+  }
 }
