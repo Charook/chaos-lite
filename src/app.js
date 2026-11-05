@@ -53,6 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-vector-opportunity').addEventListener('click', () => handleVectorGenerator('opportunity'));
   document.getElementById('btn-vector-complication').addEventListener('click', () => handleVectorGenerator('complication'));
 
+  // Track creation & render bindings
+  document.getElementById('btn-create-track').addEventListener('click', handleCreateTrack);
+  renderTracks();
+
   // Initial render
   renderMeters();
 
@@ -527,4 +531,139 @@ function handleVectorGenerator(type) {
     const directive = buildVectorDirective(vectorText, type);
     pushDirectiveOutput(directive, 'append');
   }
+}
+
+/**
+ * Reads form inputs and creates a new track in gameState.
+ */
+function handleCreateTrack() {
+  const nameInput = document.getElementById('track-name-input');
+  const typeSelect = document.getElementById('track-type-select');
+  const sizeSelect = document.getElementById('track-size-select');
+
+  if (!nameInput || !nameInput.value.trim()) {
+    alert('Please enter a track name.');
+    return;
+  }
+
+  const name = nameInput.value.trim();
+  const type = typeSelect ? typeSelect.value : 'objective';
+  const size = sizeSelect ? parseInt(sizeSelect.value, 10) : 6;
+
+  if (typeof createTrack === 'function') {
+    createTrack(name, size, type);
+  }
+
+  nameInput.value = '';
+  renderTracks();
+}
+
+// State tracker for delete confirmation timeout
+let pendingDeleteTrackId = null;
+let deleteTimeoutTimer = null;
+
+/**
+ * Renders all tracks from gameState.tracks into #tracks-list.
+ */
+function renderTracks() {
+  const tracksList = document.getElementById('tracks-list');
+  if (!tracksList || !window.gameState) return;
+
+  tracksList.innerHTML = '';
+
+  if (!Array.isArray(window.gameState.tracks) || window.gameState.tracks.length === 0) {
+    tracksList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding: 4px 0 12px 0;">No active tracks. Add one below!</div>`;
+    return;
+  }
+
+  window.gameState.tracks.forEach(track => {
+    const trackEl = document.createElement('div');
+    trackEl.className = `track-item ${track.type || 'objective'}`;
+
+    // Header with title and control buttons
+    const headerEl = document.createElement('div');
+    headerEl.className = 'track-header';
+
+    const typeLabel = (track.type || 'objective').toUpperCase();
+    const isConfirming = (pendingDeleteTrackId === track.id);
+    const deleteBtnText = isConfirming ? 'Confirm?' : '×';
+    const deleteBtnClass = `track-btn btn-delete${isConfirming ? ' confirming' : ''}`;
+
+    headerEl.innerHTML = `
+      <div class="track-title-wrap">
+        <span class="track-type-badge">${typeLabel}</span>
+        <span class="track-name">${track.name} (${track.current}/${track.size})</span>
+      </div>
+      <div class="track-controls">
+        <button class="track-btn" type="button" onclick="handleReduceTrack('${track.id}')">-</button>
+        <button class="track-btn" type="button" onclick="handleAdvanceTrack('${track.id}')">+</button>
+        <button class="${deleteBtnClass}" type="button" onclick="handleDeleteTrack('${track.id}')">${deleteBtnText}</button>
+      </div>
+    `;
+
+    // Segment boxes container
+    const boxesEl = document.createElement('div');
+    boxesEl.className = 'track-boxes';
+
+    for (let i = 0; i < track.size; i++) {
+      const box = document.createElement('div');
+      box.className = `segment-box ${i < track.current ? 'filled' : ''}`;
+      boxesEl.appendChild(box);
+    }
+
+    trackEl.appendChild(headerEl);
+    trackEl.appendChild(boxesEl);
+    tracksList.appendChild(trackEl);
+  });
+}
+
+/**
+ * Safely removes a track by requiring a second tap within 2 seconds.
+ */
+function handleDeleteTrack(id) {
+  if (pendingDeleteTrackId === id) {
+    // Second tap: execute delete
+    clearTimeout(deleteTimeoutTimer);
+    pendingDeleteTrackId = null;
+    if (typeof removeTrack === 'function') {
+      removeTrack(id);
+    }
+    renderTracks();
+  } else {
+    // First tap: trigger "Confirm?" state
+    clearTimeout(deleteTimeoutTimer);
+    pendingDeleteTrackId = id;
+    renderTracks();
+
+    // Reset back to normal after 2 seconds if not confirmed
+    deleteTimeoutTimer = setTimeout(() => {
+      pendingDeleteTrackId = null;
+      renderTracks();
+    }, 2000);
+  }
+}
+
+/**
+ * Advances a track by 1 segment.
+ */
+function handleAdvanceTrack(id) {
+  if (typeof advanceTrack === 'function') {
+    advanceTrack(id, 1);
+  }
+  renderTracks();
+}
+
+/**
+ * Decreases a track by 1 segment.
+ */
+function handleReduceTrack(id) {
+  if (window.gameState && Array.isArray(window.gameState.tracks)) {
+    const track = window.gameState.tracks.find(t => t.id === id);
+    if (track && track.current > 0) {
+      track.current -= 1;
+      track.isComplete = (track.current >= track.size);
+      if (typeof saveState === 'function') saveState();
+    }
+  }
+  renderTracks();
 }

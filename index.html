@@ -116,6 +116,45 @@
       </div>
     </details>
 
+    <!-- COLLAPSIBLE: PROGRESS & THREAT TRACKS -->
+    <details class="card" open>
+      <summary>Progress & Threat Tracks</summary>
+      <div class="section-body">
+        
+        <!-- DYNAMIC TRACKS CONTAINER (TOP) -->
+        <div id="tracks-list" class="tracks-list">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- CREATE TRACK FORM (BOTTOM) -->
+        <div class="track-create-form">
+          <div class="form-group">
+            <label for="track-name-input">Track Name</label>
+            <input type="text" id="track-name-input" placeholder="e.g., Find the Monstrance..." />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="track-type-select">Type</label>
+              <select id="track-type-select">
+                <option value="objective">Objective</option>
+                <option value="threat">Threat</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="track-size-select">Segments</label>
+              <select id="track-size-select">
+                <option value="4">4 Segments</option>
+                <option value="6" selected>6 Segments</option>
+                <option value="8">8 Segments</option>
+              </select>
+            </div>
+            <button id="btn-create-track" class="btn-secondary" type="button" style="align-self: flex-end;">+ Add Track</button>
+          </div>
+        </div>
+
+      </div>
+    </details>
+
   </div>
 
   <!-- 1. DATA FILES -->
